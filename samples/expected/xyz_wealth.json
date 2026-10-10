@@ -1,0 +1,91 @@
+{
+  "statement_type": "pms",
+  "provider": "XYZ Wealth",
+  "strategy_name": "XYZ Multicap Opportunities",
+  "client_id": "98765",
+  "period_start": "2026-04-01",
+  "period_end": "2026-04-30",
+  "currency": "INR",
+  "summary": {
+    "opening_value": "1350000.00",
+    "closing_value": "1355500.00",
+    "cash_balance": "125000.00",
+    "fees_charged": "12000.00",
+    "nav_per_unit": null,
+    "units_held": null,
+    "capital_inflows": "100000.00",
+    "capital_outflows": "30000.00",
+    "net_gain": "-52500.00",
+    "capital_committed": null,
+    "capital_uncalled": null
+  },
+  "holdings": [
+    {
+      "security_name": "Bajaj Finance",
+      "isin": "INE296A01024",
+      "quantity": "60",
+      "cost": "390000.00",
+      "market_price": null,
+      "market_value": "426000.00",
+      "weight_pct": "31.43"
+    },
+    {
+      "security_name": "Larsen & Toubro",
+      "isin": "INE018A01030",
+      "quantity": "90",
+      "cost": "270000.00",
+      "market_price": null,
+      "market_value": "324000.00",
+      "weight_pct": "23.90"
+    },
+    {
+      "security_name": "Asian Paints",
+      "isin": "INE021A01026",
+      "quantity": "70",
+      "cost": "150000.00",
+      "market_price": null,
+      "market_value": "168000.00",
+      "weight_pct": "12.39"
+    },
+    {
+      "security_name": "Maruti Suzuki India",
+      "isin": "INE585B01010",
+      "quantity": "25",
+      "cost": "280000.00",
+      "market_price": null,
+      "market_value": "312500.00",
+      "weight_pct": "23.05"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2026-04-03",
+      "type": "inflow",
+      "security_name": "Funds added",
+      "quantity": null,
+      "amount": "100000.00"
+    },
+    {
+      "date": "2026-04-09",
+      "type": "buy",
+      "security_name": "Asian Paints",
+      "quantity": "20",
+      "amount": "47000.00"
+    },
+    {
+      "date": "2026-04-17",
+      "type": "outflow",
+      "security_name": "Withdrawal",
+      "quantity": null,
+      "amount": "-30000.00"
+    },
+    {
+      "date": "2026-04-30",
+      "type": "fee",
+      "security_name": "Management fee",
+      "quantity": null,
+      "amount": "-12000.00"
+    }
+  ],
+  "source_file_hash": null
+}

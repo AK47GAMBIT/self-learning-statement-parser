@@ -113,3 +113,8 @@ def test_unknown_transform_is_rejected():
     assert not is_known_transform("do_something_clever")
     with pytest.raises(UnknownTransformError):
         apply_transform("do_something_clever", "x")
+
+def test_number_abs():
+    assert apply_transform("number_abs", "(12,000.00)") == Decimal("12000.00")
+    assert apply_transform("number_abs", "12,000.00") == Decimal("12000.00")
+    assert apply_transform("number_abs", "-") is None

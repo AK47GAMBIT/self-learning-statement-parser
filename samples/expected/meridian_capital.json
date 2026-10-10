@@ -1,0 +1,82 @@
+{
+  "statement_type": "pms",
+  "provider": "Meridian Capital",
+  "strategy_name": "Meridian Value Equity",
+  "client_id": "MC/2291/B",
+  "period_start": "2026-04-01",
+  "period_end": "2026-04-30",
+  "currency": "INR",
+  "summary": {
+    "opening_value": "950000.00",
+    "closing_value": "999000.00",
+    "cash_balance": "203000.00",
+    "fees_charged": "6000.00",
+    "nav_per_unit": null,
+    "units_held": null,
+    "capital_inflows": null,
+    "capital_outflows": null,
+    "net_gain": null,
+    "capital_committed": null,
+    "capital_uncalled": null
+  },
+  "holdings": [
+    {
+      "security_name": "Sun Pharmaceutical Industries",
+      "isin": "INE044A01036",
+      "quantity": "180",
+      "cost": "240000.00",
+      "market_price": "1650.00",
+      "market_value": "297000.00",
+      "weight_pct": "29.73"
+    },
+    {
+      "security_name": "Titan Company",
+      "isin": "INE280A01028",
+      "quantity": "60",
+      "cost": "175000.00",
+      "market_price": "3400.00",
+      "market_value": "204000.00",
+      "weight_pct": "20.42"
+    },
+    {
+      "security_name": "Axis Bank",
+      "isin": "INE238A01034",
+      "quantity": "250",
+      "cost": "260000.00",
+      "market_price": "1180.00",
+      "market_value": "295000.00",
+      "weight_pct": "29.53"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2026-04-02",
+      "type": "buy",
+      "security_name": "Axis Bank",
+      "quantity": "50",
+      "amount": "-57500.00"
+    },
+    {
+      "date": "2026-04-14",
+      "type": "dividend",
+      "security_name": "Sun Pharmaceutical Industries",
+      "quantity": null,
+      "amount": "4500.00"
+    },
+    {
+      "date": "2026-04-28",
+      "type": "sell",
+      "security_name": "Titan Company",
+      "quantity": "20",
+      "amount": "67000.00"
+    },
+    {
+      "date": "2026-04-30",
+      "type": "fee",
+      "security_name": "Performance fee",
+      "quantity": null,
+      "amount": "-6000.00"
+    }
+  ],
+  "source_file_hash": null
+}

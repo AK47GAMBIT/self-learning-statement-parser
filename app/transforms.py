@@ -148,6 +148,13 @@ def transaction_type(raw: Optional[str]) -> Optional[TransactionType]:
     return TransactionType.OTHER  # Part 6 will flag statements containing OTHER
 
 
+def number_abs(raw: Optional[str]) -> Optional[Decimal]:
+    """Magnitude only. For fields we store as positive amounts (fees, outflows)
+    that some providers print in brackets or with a minus sign."""
+    value = _to_decimal(raw)
+    return None if value is None else abs(value)
+
+
 # ---------- the registry ----------
 
 TRANSFORMS: dict[str, Callable[[Optional[str]], Any]] = {
@@ -164,6 +171,7 @@ TRANSFORMS: dict[str, Callable[[Optional[str]], Any]] = {
     "date_iso": _make_date_parser("%Y-%m-%d"),               # 2026-04-01
     "date_dd_month_yyyy": _make_date_parser("%d %B %Y"),     # 1 April 2026
     "date_month_dd_yyyy": _make_date_parser("%B %d, %Y"),    # April 1, 2026
+    "number_abs": number_abs,
 }
 
 

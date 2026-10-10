@@ -1,0 +1,47 @@
+{
+  "statement_type": "aif",
+  "provider": "Helix Capital Partners",
+  "strategy_name": "Helix Private Credit Fund II",
+  "client_id": "HCF-2024-118",
+  "period_start": "2025-10-01",
+  "period_end": "2026-03-31",
+  "currency": "INR",
+  "summary": {
+    "opening_value": "2600000.00",
+    "closing_value": "3301000.00",
+    "cash_balance": null,
+    "fees_charged": "45000.00",
+    "nav_per_unit": "1320.4000",
+    "units_held": "2500.0000",
+    "capital_inflows": "400000.00",
+    "capital_outflows": "50000.00",
+    "net_gain": "396000.00",
+    "capital_committed": "5000000.00",
+    "capital_uncalled": "2000000.00"
+  },
+  "holdings": [],
+  "transactions": [
+    {
+      "date": "2025-11-15",
+      "type": "inflow",
+      "security_name": "Capital call - 4th drawdown",
+      "quantity": null,
+      "amount": "400000.00"
+    },
+    {
+      "date": "2026-01-20",
+      "type": "outflow",
+      "security_name": "Distribution of income",
+      "quantity": null,
+      "amount": "50000.00"
+    },
+    {
+      "date": "2026-03-31",
+      "type": "fee",
+      "security_name": "Management fee",
+      "quantity": null,
+      "amount": "45000.00"
+    }
+  ],
+  "source_file_hash": null
+}

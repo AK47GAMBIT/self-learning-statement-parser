@@ -1,0 +1,100 @@
+{
+  "statement_type": "pms",
+  "provider": "ABC Portfolio Managers",
+  "strategy_name": "ABC Large Cap Growth",
+  "client_id": "AB1234",
+  "period_start": "2026-04-01",
+  "period_end": "2026-04-30",
+  "currency": "INR",
+  "summary": {
+    "opening_value": "1200000.00",
+    "closing_value": "1330000.00",
+    "cash_balance": "85000.00",
+    "fees_charged": "8000.00",
+    "nav_per_unit": null,
+    "units_held": null,
+    "capital_inflows": "50000.00",
+    "capital_outflows": "0.00",
+    "net_gain": "88000.00",
+    "capital_committed": null,
+    "capital_uncalled": null
+  },
+  "holdings": [
+    {
+      "security_name": "Reliance Industries",
+      "isin": "INE002A01018",
+      "quantity": "120",
+      "cost": "310000.00",
+      "market_price": "2875.00",
+      "market_value": "345000.00",
+      "weight_pct": "25.94"
+    },
+    {
+      "security_name": "HDFC Bank",
+      "isin": "INE040A01034",
+      "quantity": "200",
+      "cost": "290000.00",
+      "market_price": "1550.00",
+      "market_value": "310000.00",
+      "weight_pct": "23.31"
+    },
+    {
+      "security_name": "Infosys",
+      "isin": "INE009A01021",
+      "quantity": "150",
+      "cost": "205000.00",
+      "market_price": "1480.00",
+      "market_value": "222000.00",
+      "weight_pct": "16.69"
+    },
+    {
+      "security_name": "Tata Consultancy Services",
+      "isin": "INE467B01029",
+      "quantity": "40",
+      "cost": "140000.00",
+      "market_price": "3950.00",
+      "market_value": "158000.00",
+      "weight_pct": "11.88"
+    },
+    {
+      "security_name": "ITC",
+      "isin": "INE154A01025",
+      "quantity": "500",
+      "cost": "190000.00",
+      "market_price": "420.00",
+      "market_value": "210000.00",
+      "weight_pct": "15.79"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2026-04-06",
+      "type": "buy",
+      "security_name": "Infosys",
+      "quantity": "50",
+      "amount": "72000.00"
+    },
+    {
+      "date": "2026-04-15",
+      "type": "sell",
+      "security_name": "ITC",
+      "quantity": "100",
+      "amount": "41000.00"
+    },
+    {
+      "date": "2026-04-22",
+      "type": "dividend",
+      "security_name": "HDFC Bank",
+      "quantity": null,
+      "amount": "3000.00"
+    },
+    {
+      "date": "2026-04-30",
+      "type": "fee",
+      "security_name": "Management fee",
+      "quantity": null,
+      "amount": "8000.00"
+    }
+  ],
+  "source_file_hash": null
+}

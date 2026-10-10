@@ -1,0 +1,40 @@
+{
+  "statement_type": "aif",
+  "provider": "Sterling Growth Fund",
+  "strategy_name": "Sterling Growth Fund - Category II",
+  "client_id": "SGF-00457",
+  "period_start": "2026-01-01",
+  "period_end": "2026-03-31",
+  "currency": "INR",
+  "summary": {
+    "opening_value": "1100000.00",
+    "closing_value": "1285430.00",
+    "cash_balance": null,
+    "fees_charged": "5000.00",
+    "nav_per_unit": "1285.4300",
+    "units_held": "1000.0000",
+    "capital_inflows": "100000.00",
+    "capital_outflows": "0.00",
+    "net_gain": "90430.00",
+    "capital_committed": null,
+    "capital_uncalled": null
+  },
+  "holdings": [],
+  "transactions": [
+    {
+      "date": "2026-02-10",
+      "type": "inflow",
+      "security_name": "Capital call - 3rd drawdown",
+      "quantity": null,
+      "amount": "100000.00"
+    },
+    {
+      "date": "2026-03-31",
+      "type": "fee",
+      "security_name": "Management fee",
+      "quantity": null,
+      "amount": "5000.00"
+    }
+  ],
+  "source_file_hash": null
+}

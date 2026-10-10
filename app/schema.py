@@ -65,6 +65,9 @@ class Summary(BaseModel):
     capital_inflows: Optional[Decimal] = None
     capital_outflows: Optional[Decimal] = None
     net_gain: Optional[Decimal] = None
+        # AIF commitment tracking:
+    capital_committed: Optional[Decimal] = None
+    capital_uncalled: Optional[Decimal] = None
 
 
 class Statement(BaseModel):
