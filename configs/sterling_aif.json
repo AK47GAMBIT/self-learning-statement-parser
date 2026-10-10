@@ -19,5 +19,15 @@
       "closing_value": {"label": "Closing Capital Account Balance"},
       "units_held": {"label": "Units Held"},
       "nav_per_unit": {"label": "NAV per Unit (INR)"}
+    },
+    "transactions": {
+        "header_starts_with": "Date",
+        "stop_at": [],
+        "columns": [
+          {"header": "Date", "field": "date", "transform": "date_iso"},
+          {"header": "Type", "field": "type", "transform": "txn_type"},
+          {"header": "Description", "field": "security_name"},
+          {"header": "Amount (INR)", "field": "amount", "transform": "number"}
+        ]
     }
   }

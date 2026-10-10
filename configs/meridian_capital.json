@@ -15,5 +15,29 @@
       "closing_value": {"label": "Portfolio value at end"},
       "cash_balance": {"label": "Cash balance"},
       "fees_charged": {"label": "Charges for the period"}
+    },
+    "holdings": {
+      "header_starts_with": "Instrument",
+      "stop_at": ["Total Equity"],
+      "columns": [
+        {"header": "Instrument", "field": "security_name"},
+        {"header": "ISIN", "field": "isin", "transform": "isin"},
+        {"header": "No. of Shares", "field": "quantity", "transform": "number"},
+        {"header": "Book Cost", "field": "cost", "transform": "number"},
+        {"header": "Rate", "field": "market_price", "transform": "number"},
+        {"header": "Market Value", "field": "market_value", "transform": "number"},
+        {"header": "Wt %", "field": "weight_pct", "transform": "number"}
+      ]
+    },
+    "transactions": {
+      "header_starts_with": "Value Date",
+      "stop_at": [],
+      "columns": [
+        {"header": "Value Date", "field": "date", "transform": "date_dd_month_yyyy"},
+        {"header": "Nature", "field": "type", "transform": "txn_type"},
+        {"header": "Particulars", "field": "security_name"},
+        {"header": "Qty", "field": "quantity", "transform": "number", "optional": true},
+        {"header": "Amount", "field": "amount", "transform": "number_drcr"}
+      ]
     }
   }

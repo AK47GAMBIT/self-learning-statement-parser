@@ -18,5 +18,28 @@
       "net_gain": {"label": "Gain for the Period"},
       "closing_value": {"label": "Ending Balance"},
       "cash_balance": {"label": "Cash / Liquid Balance"}
+    },
+    "holdings": {
+      "header_starts_with": "Stock Name",
+      "stop_at": [],
+      "columns": [
+        {"header": "Stock Name", "field": "security_name"},
+        {"header": "Units Held", "field": "quantity", "transform": "number"},
+        {"header": "Cost (INR)", "field": "cost", "transform": "number"},
+        {"header": "Value (INR)", "field": "market_value", "transform": "number"},
+        {"header": "ISIN Code", "field": "isin", "transform": "isin"},
+        {"header": "% of Portfolio", "field": "weight_pct", "transform": "percent"}
+      ]
+    },
+    "transactions": {
+      "header_starts_with": "Txn Date",
+      "stop_at": [],
+      "columns": [
+        {"header": "Txn Date", "field": "date", "transform": "date_dd_mm_yyyy"},
+        {"header": "Transaction", "field": "type", "transform": "txn_type"},
+        {"header": "Scrip", "field": "security_name"},
+        {"header": "Units", "field": "quantity", "transform": "number", "optional": true},
+        {"header": "Amount (INR)", "field": "amount", "transform": "number"}
+      ]
     }
   }

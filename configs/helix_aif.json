@@ -21,5 +21,15 @@
       "closing_value": {"label": "Closing Balance"},
       "units_held": {"label": "Units outstanding"},
       "nav_per_unit": {"label": "NAV per unit"}
-    }
+    },
+    "transactions": {
+        "header_starts_with": "Date",
+        "stop_at": [],
+        "columns": [
+          {"header": "Date", "field": "date", "transform": "date_dd_mm_yyyy_dash"},
+          {"header": "Type", "field": "type", "transform": "txn_type"},
+          {"header": "Narration", "field": "security_name"},
+          {"header": "Amount", "field": "amount", "transform": "number"}
+        ]
+      }
   }
