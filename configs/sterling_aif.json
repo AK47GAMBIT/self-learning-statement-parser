@@ -1,0 +1,23 @@
+{
+    "format_name": "sterling_aif",
+    "statement_type": "aif",
+    "provider": "Sterling Growth Fund",
+    "currency": "INR",
+    "fields": {
+      "client_id": {"regex": "Investor Code:\\s*(\\S+)"},
+      "strategy_name": {"regex": "Fund:\\s*(.+)"},
+      "period_start": {"regex": "Period:\\s*(\\d{4}-\\d{2}-\\d{2})\\s+to", "transform": "date_iso"},
+      "period_end": {"regex": "Period:\\s*\\d{4}-\\d{2}-\\d{2}\\s+to\\s+(\\d{4}-\\d{2}-\\d{2})", "transform": "date_iso"},
+      "currency": {"regex": "Currency:\\s*([A-Za-z]{3})"}
+    },
+    "summary": {
+      "opening_value": {"label": "Opening Capital Account Balance"},
+      "capital_inflows": {"label": "Add: Capital Contributions"},
+      "capital_outflows": {"label": "Less: Distributions"},
+      "fees_charged": {"label": "Less: Management Fees"},
+      "net_gain": {"label": "Add: Net Investment Gain"},
+      "closing_value": {"label": "Closing Capital Account Balance"},
+      "units_held": {"label": "Units Held"},
+      "nav_per_unit": {"label": "NAV per Unit (INR)"}
+    }
+  }

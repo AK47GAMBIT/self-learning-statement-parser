@@ -1,0 +1,22 @@
+{
+    "format_name": "xyz_wealth",
+    "statement_type": "pms",
+    "provider": "XYZ Wealth",
+    "currency": "INR",
+    "fields": {
+      "client_id": {"regex": "Investor ID\\s*\\.+\\s*(\\S+)"},
+      "strategy_name": {"regex": "Scheme\\s*:\\s*(.+)"},
+      "period_start": {"regex": "Statement Period\\s*:\\s*(\\d{2}/\\d{2}/\\d{4})\\s+to", "transform": "date_dd_mm_yyyy"},
+      "period_end": {"regex": "Statement Period\\s*:\\s*\\d{2}/\\d{2}/\\d{4}\\s+to\\s+(\\d{2}/\\d{2}/\\d{4})", "transform": "date_dd_mm_yyyy"},
+      "currency": {"regex": "All amounts in\\s+([A-Za-z]{3})"}
+    },
+    "summary": {
+      "opening_value": {"label": "Beginning Balance"},
+      "capital_inflows": {"label": "Deposits"},
+      "capital_outflows": {"label": "Withdrawals", "transform": "number_abs"},
+      "fees_charged": {"label": "Fees & Charges", "transform": "number_abs"},
+      "net_gain": {"label": "Gain for the Period"},
+      "closing_value": {"label": "Ending Balance"},
+      "cash_balance": {"label": "Cash / Liquid Balance"}
+    }
+  }

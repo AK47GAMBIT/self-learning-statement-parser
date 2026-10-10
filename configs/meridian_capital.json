@@ -1,0 +1,19 @@
+{
+    "format_name": "meridian_capital",
+    "statement_type": "pms",
+    "provider": "Meridian Capital",
+    "currency": "INR",
+    "fields": {
+      "client_id": {"regex": "Client Ref:\\s*(\\S+)"},
+      "strategy_name": {"regex": "Mandate:\\s*(.+)"},
+      "period_start": {"regex": "From\\s+(\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})\\s+to", "transform": "date_dd_month_yyyy"},
+      "period_end": {"regex": "From\\s+\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4}\\s+to\\s+(\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})", "transform": "date_dd_month_yyyy"},
+      "currency": {"regex": "Reporting currency:\\s*([A-Za-z]{3})"}
+    },
+    "summary": {
+      "opening_value": {"label": "Portfolio value at start"},
+      "closing_value": {"label": "Portfolio value at end"},
+      "cash_balance": {"label": "Cash balance"},
+      "fees_charged": {"label": "Charges for the period"}
+    }
+  }

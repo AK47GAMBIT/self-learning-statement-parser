@@ -1,0 +1,25 @@
+{
+    "format_name": "helix_aif",
+    "statement_type": "aif",
+    "provider": "Helix Capital Partners",
+    "currency": "INR",
+    "fields": {
+      "client_id": {"regex": "Investor Code:\\s*(\\S+)"},
+      "strategy_name": {"regex": "Fund:\\s*(.+)"},
+      "period_start": {"regex": "Reporting period:\\s*(\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})\\s+to", "transform": "date_dd_month_yyyy"},
+      "period_end": {"regex": "Reporting period:\\s*\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4}\\s+to\\s+(\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})", "transform": "date_dd_month_yyyy"},
+      "currency": {"regex": "Currency:\\s*([A-Za-z]{3})"}
+    },
+    "summary": {
+      "capital_committed": {"label": "Total Commitment"},
+      "capital_uncalled": {"label": "Uncalled Commitment"},
+      "opening_value": {"label": "Opening Balance"},
+      "capital_inflows": {"label": "Drawdowns during the period"},
+      "capital_outflows": {"label": "Distributions during the period"},
+      "fees_charged": {"label": "Fees and expenses"},
+      "net_gain": {"label": "Net income / gain"},
+      "closing_value": {"label": "Closing Balance"},
+      "units_held": {"label": "Units outstanding"},
+      "nav_per_unit": {"label": "NAV per unit"}
+    }
+  }

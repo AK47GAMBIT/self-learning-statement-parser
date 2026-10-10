@@ -1,0 +1,45 @@
+{
+    "format_name": "abc_pms",
+    "statement_type": "pms",
+    "provider": "ABC Portfolio Managers",
+    "currency": "INR",
+    "fields": {
+      "client_id": {"regex": "Client Code:\\s*(\\S+)"},
+      "strategy_name": {"regex": "Strategy:\\s*(.+?)\\s+Currency:"},
+      "period_start": {"regex": "Period:\\s*(\\d{2}-[A-Za-z]{3}-\\d{4})\\s+to", "transform": "date_dd_mon_yyyy"},
+      "period_end": {"regex": "to\\s+(\\d{2}-[A-Za-z]{3}-\\d{4})", "transform": "date_dd_mon_yyyy"}
+    },
+    "summary": {
+      "opening_value": {"label": "Opening Value"},
+      "capital_inflows": {"label": "Add: Inflows"},
+      "capital_outflows": {"label": "Less: Outflows"},
+      "fees_charged": {"label": "Less: Fees Charged"},
+      "net_gain": {"label": "Net Gain"},
+      "closing_value": {"label": "Closing Value"},
+      "cash_balance": {"label": "Cash Balance"}
+    },
+    "holdings": {
+      "header_starts_with": "Security",
+      "stop_at": ["Total"],
+      "columns": [
+        {"header": "Security", "field": "security_name", "transform": "text"},
+        {"header": "ISIN", "field": "isin", "transform": "isin"},
+        {"header": "Qty", "field": "quantity", "transform": "number"},
+        {"header": "Cost", "field": "cost", "transform": "number"},
+        {"header": "Mkt Price", "field": "market_price", "transform": "number"},
+        {"header": "Mkt Value", "field": "market_value", "transform": "number"},
+        {"header": "Weight %", "field": "weight_pct", "transform": "number"}
+      ]
+    },
+    "transactions": {
+      "header_starts_with": "Date",
+      "stop_at": [],
+      "columns": [
+        {"header": "Date", "field": "date", "transform": "date_dd_mon_yyyy"},
+        {"header": "Type", "field": "type", "transform": "txn_type"},
+        {"header": "Security", "field": "security_name", "transform": "text"},
+        {"header": "Qty", "field": "quantity", "transform": "number", "optional": true},
+        {"header": "Amount", "field": "amount", "transform": "number"}
+      ]
+    }
+  }
