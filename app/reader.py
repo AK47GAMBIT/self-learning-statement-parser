@@ -9,7 +9,7 @@ from typing import Optional
 
 import pdfplumber
 from pdfminer.pdfdocument import PDFPasswordIncorrect
-from pdfminer.pdfparser import PDFSyntaxError
+from pdfplumber.utils.exceptions import PdfminerException
 
 # Words closer than this (in PDF points) belong to the same cell. A normal space at
 # 8-9pt is about 2-3pt; the gap between adjacent table cells is at least ~12pt.
@@ -114,11 +114,15 @@ def read_document(path, password: Optional[str] = None, gap: float = CELL_GAP) -
     path = Path(path)
     try:
         pdf = pdfplumber.open(path, password=password or "")
-    except PDFPasswordIncorrect:
-        if password:
-            raise WrongPasswordError(f"The password does not open {path.name}")
-        raise PasswordRequiredError(f"{path.name} is password protected")
-    except (PDFSyntaxError, ValueError) as e:
+    except PdfminerException as e:
+        # pdfplumber wraps the real pdfminer error; the original is in e.args[0].
+        cause = e.args[0] if e.args else None
+        if isinstance(cause, PDFPasswordIncorrect):
+            if password:
+                raise WrongPasswordError(f"The password does not open {path.name}") from e
+            raise PasswordRequiredError(f"{path.name} is password protected") from e
+        raise UnreadableDocumentError(f"{path.name} could not be read: {cause or e}") from e
+    except (OSError, ValueError) as e:
         raise UnreadableDocumentError(f"{path.name} could not be read: {e}") from e
 
     doc = Document()
