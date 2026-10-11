@@ -37,6 +37,23 @@ CREATE TABLE IF NOT EXISTS emails (
 );
 """
 
+SCHEMA += """
+CREATE TABLE IF NOT EXISTS reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    document_id INTEGER NOT NULL,
+    decision TEXT NOT NULL CHECK (decision IN ('approved', 'rejected', 'reopened')),
+    note TEXT,
+    reviewed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_reviews_doc ON reviews(document_id);
+"""
+
+# A document joined with its LATEST review decision (if any).
+_FROM = ("FROM documents d LEFT JOIN reviews r "
+         "ON r.id = (SELECT MAX(id) FROM reviews WHERE document_id = d.id)")
+_SELECT = ("SELECT d.*, r.decision AS review_decision, r.note AS review_note, "
+           "r.reviewed_at AS reviewed_at")
+
 class Store:
     def __init__(self, db_path: str = ":memory:"):
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
@@ -105,3 +122,59 @@ class Store:
     def list_emails(self) -> list:
         with self._lock:
             return self.conn.execute("SELECT * FROM emails ORDER BY id DESC").fetchall()
+    
+    def get_email(self, message_id: str) -> Optional[sqlite3.Row]:
+        with self._lock:
+            return self.conn.execute(
+                "SELECT * FROM emails WHERE message_id = ?", (message_id,)).fetchone()
+
+
+    def query(self, *, status=None, attention=False, q=None, limit=25, offset=0):
+        """One page of documents plus the total match count.
+        attention = flagged AND not yet resolved by a person."""
+        where, params = [], []
+        if status:
+            where.append("d.status = ?")
+            params.append(status)
+        if attention:
+            where.append("d.status != 'parsed_ok' "
+                         "AND (r.decision IS NULL OR r.decision = 'reopened')")
+        if q and q.strip():
+            like = "%" + q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+            cols = ["d.filename", "d.provider", "d.client_id", "d.strategy_name", "d.format_name"]
+            where.append("(" + " OR ".join(f"{c} LIKE ? ESCAPE '\\'" for c in cols) + ")")
+            params += [like] * len(cols)
+        clause = ("WHERE " + " AND ".join(where)) if where else ""
+        with self._lock:
+            total = self.conn.execute(f"SELECT COUNT(*) {_FROM} {clause}", params).fetchone()[0]
+            rows = self.conn.execute(
+                f"{_SELECT} {_FROM} {clause} ORDER BY d.id DESC LIMIT ? OFFSET ?",
+                [*params, limit, offset]).fetchall()
+        return rows, total
+
+    def get_with_review(self, doc_id: int) -> Optional[sqlite3.Row]:
+        with self._lock:
+            return self.conn.execute(
+                f"{_SELECT} {_FROM} WHERE d.id = ?", (doc_id,)).fetchone()
+
+    def add_review(self, doc_id: int, decision: str, note: str = ""):
+        with self._lock:
+            self.conn.execute(
+                "INSERT INTO reviews (document_id, decision, note) VALUES (?, ?, ?)",
+                (doc_id, decision, note or None))
+            self.conn.commit()
+
+    def review_history(self, doc_id: int) -> list:
+        with self._lock:
+            return self.conn.execute(
+                "SELECT * FROM reviews WHERE document_id = ? ORDER BY id DESC",
+                (doc_id,)).fetchall()
+
+    def review_counts(self) -> dict:
+        with self._lock:
+            rows = self.conn.execute(
+                "SELECT decision, COUNT(*) AS n FROM reviews "
+                "WHERE id IN (SELECT MAX(id) FROM reviews GROUP BY document_id) "
+                "GROUP BY decision").fetchall()
+        got = {r["decision"]: r["n"] for r in rows}
+        return {"approved": got.get("approved", 0), "rejected": got.get("rejected", 0)}

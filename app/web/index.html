@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Statement review</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div id="login" class="overlay" hidden>
+    <form id="login-form" class="login-box">
+      <h2>Statement review</h2>
+      <p class="hint">Enter the access token shown in the terminal where you started the
+        server (or the REVIEW_TOKEN value from your .env).</p>
+      <input id="token" type="password" autocomplete="off" placeholder="Access token" required>
+      <button class="primary" type="submit">Open</button>
+      <p id="login-error" class="error"></p>
+    </form>
+  </div>
+
+  <header class="top">
+    <div class="brand"><span class="logo">▦</span> Statement review</div>
+    <div class="top-right">
+      <span id="updated" class="muted"></span>
+      <button id="refresh">Refresh</button>
+      <button id="signout">Sign out</button>
+    </div>
+  </header>
+
+  <section id="cards" class="cards"></section>
+
+  <nav id="tabs" class="tabs">
+    <button data-tab="documents">Documents</button>
+    <button data-tab="emails">Emails</button>
+    <button data-tab="formats">Learned formats</button>
+  </nav>
+
+  <div id="layout" class="layout">
+    <section class="col">
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search file, provider, client, format…">
+        <div id="filters"></div>
+      </div>
+      <div id="list"></div>
+      <div id="pager" class="pager"></div>
+    </section>
+    <aside id="detail" class="drawer"></aside>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
