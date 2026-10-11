@@ -26,6 +26,16 @@ CREATE TABLE IF NOT EXISTS documents (
 CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
 """
 
+SCHEMA += """
+CREATE TABLE IF NOT EXISTS emails (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message_id TEXT NOT NULL UNIQUE,
+    subject TEXT, sender TEXT, received TEXT,
+    decision TEXT NOT NULL,
+    attachments_json TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+"""
 
 class Store:
     def __init__(self, db_path: str = ":memory:"):
@@ -74,3 +84,24 @@ class Store:
             rows = self.conn.execute(
                 "SELECT status, COUNT(*) AS n FROM documents GROUP BY status").fetchall()
         return {r["status"]: r["n"] for r in rows}
+    
+
+    def email_seen(self, message_id: str) -> bool:
+        with self._lock:
+            row = self.conn.execute(
+                "SELECT 1 FROM emails WHERE message_id = ?", (message_id,)).fetchone()
+        return row is not None
+
+    def record_email(self, message_id, subject, sender, received, decision, attachments_json):
+        with self._lock:
+            self.conn.execute(
+                "INSERT INTO emails (message_id, subject, sender, received, decision, "
+                "attachments_json) VALUES (?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT(message_id) DO UPDATE SET decision=excluded.decision, "
+                "attachments_json=excluded.attachments_json",
+                (message_id, subject, sender, received, decision, attachments_json))
+            self.conn.commit()
+
+    def list_emails(self) -> list:
+        with self._lock:
+            return self.conn.execute("SELECT * FROM emails ORDER BY id DESC").fetchall()
