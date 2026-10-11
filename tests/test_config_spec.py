@@ -65,3 +65,16 @@ def test_regex_without_capture_group_rejected():
     data["fields"]["client_id"]["regex"] = "Client Code:"           # no group
     with pytest.raises(ValidationError):
         FormatConfig.model_validate(data)
+
+def test_unknown_column_field_rejected():
+    data = load("abc_pms")
+    data["holdings"]["columns"][0]["field"] = "profit"
+    with pytest.raises(ValidationError):
+        FormatConfig.model_validate(data)
+
+
+def test_duplicate_column_field_rejected():
+    data = load("abc_pms")
+    data["holdings"]["columns"][1]["field"] = "security_name"
+    with pytest.raises(ValidationError):
+        FormatConfig.model_validate(data)

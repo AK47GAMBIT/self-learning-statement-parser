@@ -1,0 +1,121 @@
+{
+  "format_name": "sterling_growth_fund",
+  "statement_type": "aif",
+  "provider": "Sterling Growth Fund",
+  "currency": "INR",
+  "fields": {
+    "client_id": {
+      "regex": "Investor Code:\\s*(\\S+)",
+      "transform": "text",
+      "group": 1,
+      "optional": false
+    },
+    "strategy_name": {
+      "regex": "Fund:\\s*(.+)",
+      "transform": "text",
+      "group": 1,
+      "optional": false
+    },
+    "currency": {
+      "regex": "Currency:\\s*([A-Z]{3})",
+      "transform": "text",
+      "group": 1,
+      "optional": false
+    },
+    "period_start": {
+      "regex": "Period:\\s*(\\d{4}-\\d{2}-\\d{2})\\s+to",
+      "transform": "date_iso",
+      "group": 1,
+      "optional": false
+    },
+    "period_end": {
+      "regex": "to\\s+(\\d{4}-\\d{2}-\\d{2})",
+      "transform": "date_iso",
+      "group": 1,
+      "optional": false
+    }
+  },
+  "summary": {
+    "opening_value": {
+      "label": "Opening Capital Account Balance",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "capital_inflows": {
+      "label": "Add: Capital Contributions",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "capital_outflows": {
+      "label": "Less: Distributions",
+      "transform": "number_abs",
+      "cell": -1,
+      "optional": false
+    },
+    "fees_charged": {
+      "label": "Less: Management Fees",
+      "transform": "number_abs",
+      "cell": -1,
+      "optional": false
+    },
+    "net_gain": {
+      "label": "Add: Net Investment Gain",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "closing_value": {
+      "label": "Closing Capital Account Balance",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "units_held": {
+      "label": "Units Held",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "nav_per_unit": {
+      "label": "NAV per Unit (INR)",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    }
+  },
+  "transactions": {
+    "header_starts_with": "Date",
+    "stop_at": [
+      "Total"
+    ],
+    "columns": [
+      {
+        "header": "Date",
+        "field": "date",
+        "transform": "date_iso",
+        "optional": false
+      },
+      {
+        "header": "Type",
+        "field": "type",
+        "transform": "txn_type",
+        "optional": false
+      },
+      {
+        "header": "Description",
+        "field": "security_name",
+        "transform": "text",
+        "optional": false
+      },
+      {
+        "header": "Amount (INR)",
+        "field": "amount",
+        "transform": "number",
+        "optional": false
+      }
+    ],
+    "skip_if_blank": []
+  }
+}

@@ -7,11 +7,13 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.schema import Summary
+from app.schema import Holding, Summary, Transaction
 from app.transforms import is_known_transform
 
 ALLOWED_FIELDS = {"client_id", "strategy_name", "period_start", "period_end", "currency"}
 SUMMARY_FIELDS = set(Summary.model_fields)
+HOLDING_FIELDS = set(Holding.model_fields)
+TRANSACTION_FIELDS = set(Transaction.model_fields)
 
 
 class _Strict(BaseModel):
@@ -115,3 +117,17 @@ class FormatConfig(_Strict):
         if unknown:
             raise ValueError(f"unknown summary fields: {sorted(unknown)}")
         return v
+
+    @model_validator(mode="after")
+    def _check_table_fields(self):
+        for label, table, allowed in (("holdings", self.holdings, HOLDING_FIELDS),
+                                      ("transactions", self.transactions, TRANSACTION_FIELDS)):
+            if table is None:
+                continue
+            names = [c.field for c in table.columns]
+            unknown = set(names) - allowed
+            if unknown:
+                raise ValueError(f"{label}: unknown column fields {sorted(unknown)}")
+            if len(names) != len(set(names)):
+                raise ValueError(f"{label}: a field is mapped by more than one column")
+        return self

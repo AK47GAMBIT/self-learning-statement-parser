@@ -117,9 +117,9 @@ def txn_table(s, labels, date_fn, amount_fn, headers, widths, with_qty=True):
 
 
 # ============================================================ 1. ABC (PMS): baseline
-def abc_story(s: Statement):
+def abc_story(s: Statement, qty_header: str = "Qty"):
     sm = s.summary
-    rows = [["Security", "ISIN", "Qty", "Cost", "Mkt Price", "Mkt Value", "Weight %"]]
+    rows = [["Security", "ISIN", qty_header, "Cost", "Mkt Price", "Mkt Value", "Weight %"]]
     for h in s.holdings:
         rows.append([h.security_name, h.isin, qty(h.quantity), indian(h.cost),
                      indian(h.market_price), indian(h.market_value), str(h.weight_pct)])
@@ -325,6 +325,11 @@ def encrypt_pdf(path: Path, password: str):
         pdf.save(tmp, encryption=pikepdf.Encryption(user=password, owner=password + "-owner"))
     os.replace(tmp, path)
 
+def render_pdf(name: str, s: Statement, path: Path, **story_kwargs):
+    SimpleDocTemplate(str(path), pagesize=A4, leftMargin=36, rightMargin=36,
+                topMargin=36, bottomMargin=36, title=s.provider
+                    ).build(STORIES[name](s, **story_kwargs))
+
 
 def generate_all(out_dir=HERE):
     out = Path(out_dir)
@@ -335,8 +340,7 @@ def generate_all(out_dir=HERE):
     for name, build in ALL_SAMPLES.items():
         s = build()
         path = pdf_dir / f"{name}.pdf"
-        SimpleDocTemplate(str(path), pagesize=A4, leftMargin=36, rightMargin=36,
-                          topMargin=36, bottomMargin=36, title=s.provider).build(STORIES[name](s))
+        render_pdf(name, s, path)
         if name in PASSWORDS:
             encrypt_pdf(path, PASSWORDS[name])
         (exp_dir / f"{name}.json").write_text(

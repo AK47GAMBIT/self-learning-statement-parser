@@ -1,0 +1,158 @@
+{
+  "format_name": "xyz_wealth",
+  "statement_type": "pms",
+  "provider": "XYZ Wealth",
+  "currency": "INR",
+  "fields": {
+    "client_id": {
+      "regex": "Investor ID\\s*\\.+\\s*(\\S+)",
+      "transform": "text",
+      "group": 1,
+      "optional": false
+    },
+    "strategy_name": {
+      "regex": "Scheme\\s*:\\s*(.+)",
+      "transform": "text",
+      "group": 1,
+      "optional": false
+    },
+    "period_start": {
+      "regex": "Statement Period\\s*:\\s*(\\d{2}/\\d{2}/\\d{4})\\s+to",
+      "transform": "date_dd_mm_yyyy",
+      "group": 1,
+      "optional": false
+    },
+    "period_end": {
+      "regex": "Statement Period\\s*:\\s*\\d{2}/\\d{2}/\\d{4}\\s+to\\s+(\\d{2}/\\d{2}/\\d{4})",
+      "transform": "date_dd_mm_yyyy",
+      "group": 1,
+      "optional": false
+    }
+  },
+  "summary": {
+    "opening_value": {
+      "label": "Beginning Balance",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "capital_inflows": {
+      "label": "Deposits",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "capital_outflows": {
+      "label": "Withdrawals",
+      "transform": "number_abs",
+      "cell": -1,
+      "optional": false
+    },
+    "fees_charged": {
+      "label": "Fees & Charges",
+      "transform": "number_abs",
+      "cell": -1,
+      "optional": false
+    },
+    "net_gain": {
+      "label": "Gain for the Period",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "closing_value": {
+      "label": "Ending Balance",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "cash_balance": {
+      "label": "Cash / Liquid Balance",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    }
+  },
+  "holdings": {
+    "header_starts_with": "Stock Name",
+    "stop_at": [
+      "Transaction History"
+    ],
+    "columns": [
+      {
+        "header": "Stock Name",
+        "field": "security_name",
+        "transform": "text",
+        "optional": false
+      },
+      {
+        "header": "Units Held",
+        "field": "quantity",
+        "transform": "number",
+        "optional": false
+      },
+      {
+        "header": "Cost (INR)",
+        "field": "cost",
+        "transform": "number",
+        "optional": false
+      },
+      {
+        "header": "Value (INR)",
+        "field": "market_value",
+        "transform": "number",
+        "optional": false
+      },
+      {
+        "header": "ISIN Code",
+        "field": "isin",
+        "transform": "isin",
+        "optional": false
+      },
+      {
+        "header": "% of Portfolio",
+        "field": "weight_pct",
+        "transform": "percent",
+        "optional": false
+      }
+    ],
+    "skip_if_blank": []
+  },
+  "transactions": {
+    "header_starts_with": "Txn Date",
+    "stop_at": [],
+    "columns": [
+      {
+        "header": "Txn Date",
+        "field": "date",
+        "transform": "date_dd_mm_yyyy",
+        "optional": false
+      },
+      {
+        "header": "Transaction",
+        "field": "type",
+        "transform": "txn_type",
+        "optional": false
+      },
+      {
+        "header": "Scrip",
+        "field": "security_name",
+        "transform": "text",
+        "optional": false
+      },
+      {
+        "header": "Units",
+        "field": "quantity",
+        "transform": "number",
+        "optional": false
+      },
+      {
+        "header": "Amount (INR)",
+        "field": "amount",
+        "transform": "number",
+        "optional": false
+      }
+    ],
+    "skip_if_blank": []
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "format_name": "abc_portfolio_managers",
+  "statement_type": "pms",
+  "provider": "ABC Portfolio Managers",
+  "currency": "INR",
+  "fields": {
+    "client_id": {
+      "regex": "Client Code:\\s*(\\S+)",
+      "transform": "text",
+      "group": 1,
+      "optional": false
+    },
+    "period_start": {
+      "regex": "Period:\\s*(\\d{2}-[A-Za-z]{3}-\\d{4})\\s+to",
+      "transform": "date_dd_mon_yyyy",
+      "group": 1,
+      "optional": false
+    },
+    "period_end": {
+      "regex": "to\\s+(\\d{2}-[A-Za-z]{3}-\\d{4})",
+      "transform": "date_dd_mon_yyyy",
+      "group": 1,
+      "optional": false
+    },
+    "strategy_name": {
+      "regex": "Strategy:\\s*(.+?)\\s+Currency:",
+      "transform": "text",
+      "group": 1,
+      "optional": false
+    }
+  },
+  "summary": {
+    "opening_value": {
+      "label": "Opening Value",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "capital_inflows": {
+      "label": "Add: Inflows",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "capital_outflows": {
+      "label": "Less: Outflows",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "fees_charged": {
+      "label": "Less: Fees Charged",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "net_gain": {
+      "label": "Net Gain",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "closing_value": {
+      "label": "Closing Value",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "cash_balance": {
+      "label": "Cash Balance",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    }
+  },
+  "holdings": {
+    "header_starts_with": "Security",
+    "stop_at": [
+      "Total"
+    ],
+    "columns": [
+      {
+        "header": "Security",
+        "field": "security_name",
+        "transform": "text",
+        "optional": false
+      },
+      {
+        "header": "ISIN",
+        "field": "isin",
+        "transform": "isin",
+        "optional": false
+      },
+      {
+        "header": "Qty",
+        "field": "quantity",
+        "transform": "number",
+        "optional": false
+      },
+      {
+        "header": "Cost",
+        "field": "cost",
+        "transform": "number",
+        "optional": false
+      },
+      {
+        "header": "Mkt Price",
+        "field": "market_price",
+        "transform": "number",
+        "optional": false
+      },
+      {
+        "header": "Mkt Value",
+        "field": "market_value",
+        "transform": "number",
+        "optional": false
+      },
+      {
+        "header": "Weight %",
+        "field": "weight_pct",
+        "transform": "percent",
+        "optional": false
+      }
+    ],
+    "skip_if_blank": []
+  },
+  "transactions": {
+    "header_starts_with": "Date",
+    "stop_at": [],
+    "columns": [
+      {
+        "header": "Date",
+        "field": "date",
+        "transform": "date_dd_mon_yyyy",
+        "optional": false
+      },
+      {
+        "header": "Type",
+        "field": "type",
+        "transform": "txn_type",
+        "optional": false
+      },
+      {
+        "header": "Security",
+        "field": "security_name",
+        "transform": "text",
+        "optional": false
+      },
+      {
+        "header": "Qty",
+        "field": "quantity",
+        "transform": "number",
+        "optional": false
+      },
+      {
+        "header": "Amount",
+        "field": "amount",
+        "transform": "number",
+        "optional": false
+      }
+    ],
+    "skip_if_blank": []
+  }
+}

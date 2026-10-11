@@ -1,0 +1,133 @@
+{
+  "format_name": "helix_capital_partners",
+  "statement_type": "aif",
+  "provider": "Helix Capital Partners",
+  "currency": "INR",
+  "fields": {
+    "client_id": {
+      "regex": "Investor Code:\\s*(\\S+)",
+      "transform": "text",
+      "group": 1,
+      "optional": false
+    },
+    "strategy_name": {
+      "regex": "Fund:\\s*(.+)",
+      "transform": "text",
+      "group": 1,
+      "optional": false
+    },
+    "period_start": {
+      "regex": "Reporting period:\\s*(\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})\\s+to",
+      "transform": "date_dd_month_yyyy",
+      "group": 1,
+      "optional": false
+    },
+    "period_end": {
+      "regex": "to\\s+(\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})",
+      "transform": "date_dd_month_yyyy",
+      "group": 1,
+      "optional": false
+    },
+    "currency": {
+      "regex": "Currency:\\s*([A-Z]{3})",
+      "transform": "text",
+      "group": 1,
+      "optional": false
+    }
+  },
+  "summary": {
+    "capital_committed": {
+      "label": "Total Commitment",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "capital_uncalled": {
+      "label": "Uncalled Commitment",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "opening_value": {
+      "label": "Opening Balance",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "capital_inflows": {
+      "label": "Drawdowns during the period",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "capital_outflows": {
+      "label": "Distributions during the period",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "fees_charged": {
+      "label": "Fees and expenses",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "net_gain": {
+      "label": "Net income / gain",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "closing_value": {
+      "label": "Closing Balance",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "units_held": {
+      "label": "Units outstanding",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    },
+    "nav_per_unit": {
+      "label": "NAV per unit",
+      "transform": "number",
+      "cell": -1,
+      "optional": false
+    }
+  },
+  "transactions": {
+    "header_starts_with": "Date",
+    "stop_at": [
+      "Total"
+    ],
+    "columns": [
+      {
+        "header": "Date",
+        "field": "date",
+        "transform": "date_dd_mm_yyyy_dash",
+        "optional": false
+      },
+      {
+        "header": "Type",
+        "field": "type",
+        "transform": "txn_type",
+        "optional": false
+      },
+      {
+        "header": "Narration",
+        "field": "security_name",
+        "transform": "text",
+        "optional": false
+      },
+      {
+        "header": "Amount",
+        "field": "amount",
+        "transform": "number",
+        "optional": false
+      }
+    ],
+    "skip_if_blank": []
+  }
+}
