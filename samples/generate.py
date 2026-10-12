@@ -14,6 +14,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
 
 from app.schema import Statement, TransactionType as T
 from samples.sample_data import ALL_SAMPLES, PASSWORDS
+from typing import Optional
 
 HERE = Path(__file__).parent
 
@@ -72,8 +73,9 @@ def P(text, style=BODY):
     return Paragraph(text, style)
 
 
-def make_table(rows, widths, right_cols=(), header=True, total_row=False, box=False, font=8):
-    t = Table(rows, colWidths=widths, hAlign="LEFT")
+def make_table(rows, widths, right_cols=(), header=True, total_row=False, box=False, font=8,
+               repeat_rows=0, valign=None):
+    t = Table(rows, colWidths=widths, hAlign="LEFT", repeatRows=repeat_rows)
     style = [
         ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
         ("FONTSIZE", (0, 0), (-1, -1), font),
@@ -91,6 +93,8 @@ def make_table(rows, widths, right_cols=(), header=True, total_row=False, box=Fa
     if box:
         style += [("BOX", (0, 0), (-1, -1), 1, colors.black),
                   ("BACKGROUND", (0, 0), (-1, -1), colors.whitesmoke)]
+    if valign:
+        style.append(("VALIGN", (0, 0), (-1, -1), valign))
     t.setStyle(TableStyle(style))
     return t
 
@@ -117,11 +121,21 @@ def txn_table(s, labels, date_fn, amount_fn, headers, widths, with_qty=True):
 
 
 # ============================================================ 1. ABC (PMS): baseline
-def abc_story(s: Statement, qty_header: str = "Qty"):
+def _wrap_name(name: str, limit: int = 28) -> str:
+    """Break a long name over two lines (the PDF shows two lines; the data stays one name)."""
+    if len(name) <= limit:
+        return name
+    cut = name.rfind(" ", 0, limit)
+    return name if cut <= 0 else name[:cut] + "\n" + name[cut + 1:]
+
+
+def abc_story(s: Statement, qty_header: str = "Qty", wrap: bool = False,
+              repeat_header: bool = False, valign: Optional[str] = None):
     sm = s.summary
     rows = [["Security", "ISIN", qty_header, "Cost", "Mkt Price", "Mkt Value", "Weight %"]]
     for h in s.holdings:
-        rows.append([h.security_name, h.isin, qty(h.quantity), indian(h.cost),
+        name = _wrap_name(h.security_name) if wrap else h.security_name
+        rows.append([name, h.isin, qty(h.quantity), indian(h.cost),
                      indian(h.market_price), indian(h.market_value), str(h.weight_pct)])
     rows.append(["Total", "", "", indian(sum(h.cost for h in s.holdings)), "",
                  indian(sum(h.market_value for h in s.holdings)),
@@ -146,7 +160,7 @@ def abc_story(s: Statement, qty_header: str = "Qty"):
         ]),
         P("Equity Holdings", H2),
         make_table(rows, [135, 80, 38, 68, 58, 72, 50], right_cols=(2, 3, 4, 5, 6),
-                   total_row=True),
+                   total_row=True, repeat_rows=1 if repeat_header else 0, valign=valign),
         P("Transactions", H2),
         txn_table(s, labels, d_mon, indian,
                   ["Date", "Type", "Security", "Qty", "Amount"], [70, 60, 190, 50, 90]),
@@ -325,10 +339,24 @@ def encrypt_pdf(path: Path, password: str):
         pdf.save(tmp, encryption=pikepdf.Encryption(user=password, owner=password + "-owner"))
     os.replace(tmp, path)
 
-def render_pdf(name: str, s: Statement, path: Path, **story_kwargs):
-    SimpleDocTemplate(str(path), pagesize=A4, leftMargin=36, rightMargin=36,
-                topMargin=36, bottomMargin=36, title=s.provider
-                    ).build(STORIES[name](s, **story_kwargs))
+def _furniture(canvas, doc):
+    """A running header on pages 2+ and a 'Page n' footer on every page."""
+    canvas.saveState()
+    canvas.setFont("Helvetica", 7)
+    if doc.page > 1:
+        canvas.drawString(36, A4[1] - 22, "ABC Portfolio Managers - Confidential")
+    canvas.drawString(36, 20, f"Page {doc.page}")
+    canvas.restoreState()
+
+
+def render_pdf(name: str, s: Statement, path: Path, furniture: bool = False, **story_kwargs):
+    doc = SimpleDocTemplate(str(path), pagesize=A4, leftMargin=36, rightMargin=36,
+                            topMargin=36, bottomMargin=36, title=s.provider)
+    story = STORIES[name](s, **story_kwargs)
+    if furniture:
+        doc.build(story, onFirstPage=_furniture, onLaterPages=_furniture)
+    else:
+        doc.build(story)
 
 
 def generate_all(out_dir=HERE):
