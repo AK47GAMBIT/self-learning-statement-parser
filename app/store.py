@@ -178,3 +178,10 @@ class Store:
                 "GROUP BY decision").fetchall()
         got = {r["decision"]: r["n"] for r in rows}
         return {"approved": got.get("approved", 0), "rejected": got.get("rejected", 0)}
+    
+    def clear_all(self):
+        """Delete every document, email and review (used only by the demo reset)."""
+        with self._lock:
+            for table in ("reviews", "emails", "documents"):
+                self.conn.execute(f"DELETE FROM {table}")      # fixed names, never user input
+            self.conn.commit()

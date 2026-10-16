@@ -129,3 +129,33 @@
   .login-box { background: #fff; border-radius: 14px; padding: 28px; width: min(400px, 92vw);
                display: flex; flex-direction: column; gap: 12px; }
   .login-box p { margin: 0; }
+
+  /* workbench */
+#list > .panel + .panel { margin-top: 16px; }
+.banner { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; background: #eef2ff;
+          color: #3730a3; border: 1px solid #c7d2fe; }
+.banner.bad { background: var(--bad-bg); color: var(--bad); border-color: #fca5a5; }
+.banner.working { background: var(--warn-bg); color: var(--warn); border-color: #fcd34d; }
+.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor;
+           border-right-color: transparent; border-radius: 50%; vertical-align: -2px;
+           animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.dropzone { border: 2px dashed #94a3b8; border-radius: 12px; padding: 30px; text-align: center;
+            color: var(--muted); cursor: pointer; background: #fff; margin: 12px 0; }
+.dropzone:hover, .dropzone.over { border-color: var(--brand); color: var(--brand); background: #eef2ff; }
+.dropzone.disabled { opacity: .5; cursor: default; }
+.hidden-input { display: none; }
+.upload-row { border-top: 1px solid var(--line); padding: 10px 0; }
+.result { margin-top: 6px; }
+.steps { display: grid; gap: 12px; margin: 14px 0; }
+.step { display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding: 12px 14px;
+        border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.step-no { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: #fff;
+           display: flex; align-items: center; justify-content: center; font-weight: 600; }
+.say { margin: 4px 0; }
+.verdict { font-weight: 600; margin: 8px 0 4px; }
+.verdict.ok { color: var(--ok); }
+.verdict.bad { color: var(--bad); }
+.chip.info { background: var(--info-bg); color: var(--info); }
+select { font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px;
+         background: #fff; }

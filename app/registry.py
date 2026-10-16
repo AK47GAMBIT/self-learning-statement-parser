@@ -1,6 +1,7 @@
-"""SQLite store of learned formats."""
+"""SQLite store of learned formats. Safe to share between threads."""
 import json
 import sqlite3
+import threading
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -41,37 +42,48 @@ class Registry:
     def __init__(self, db_path: str = ":memory:"):
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
-        self.conn.executescript(SCHEMA)
+        self._lock = threading.RLock()       # re-entrant: match() calls all_formats()
+        with self._lock:
+            self.conn.executescript(SCHEMA)
 
     def add_format(self, name: str, fp: Fingerprint, config: Optional[dict] = None) -> int:
-        cur = self.conn.execute(
-            "SELECT COALESCE(MAX(version), 0) FROM formats WHERE name = ?", (name,))
-        version = cur.fetchone()[0] + 1
-        cur = self.conn.execute(
-            "INSERT INTO formats (name, version, fingerprint_hash, labels_json, config_json)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (name, version, fp.digest, json.dumps(sorted(fp.labels)),
-             json.dumps(config) if config is not None else None))
-        self.conn.commit()
-        return cur.lastrowid
+        with self._lock:
+            cur = self.conn.execute(
+                "SELECT COALESCE(MAX(version), 0) FROM formats WHERE name = ?", (name,))
+            version = cur.fetchone()[0] + 1
+            cur = self.conn.execute(
+                "INSERT INTO formats (name, version, fingerprint_hash, labels_json, config_json)"
+                " VALUES (?, ?, ?, ?, ?)",
+                (name, version, fp.digest, json.dumps(sorted(fp.labels)),
+                 json.dumps(config) if config is not None else None))
+            self.conn.commit()
+            return cur.lastrowid
 
     def all_formats(self) -> list:
-        return self.conn.execute("SELECT * FROM formats ORDER BY id").fetchall()
+        with self._lock:
+            return self.conn.execute("SELECT * FROM formats ORDER BY id").fetchall()
+
+    def clear(self) -> None:
+        """Forget every learned format (used only by the demo reset)."""
+        with self._lock:
+            self.conn.execute("DELETE FROM formats")
+            self.conn.commit()
 
     def match(self, fp: Fingerprint) -> MatchResult:
-        best = None
-        best_score = 0.0
-        for row in self.all_formats():
-            if row["fingerprint_hash"] == fp.digest:
-                return self._result(MatchKind.MATCH, row, 1.0)
-            score = similarity(fp.labels, frozenset(json.loads(row["labels_json"])))
-            if score > best_score:
-                best, best_score = row, score
+        with self._lock:
+            best = None
+            best_score = 0.0
+            for row in self.all_formats():
+                if row["fingerprint_hash"] == fp.digest:
+                    return self._result(MatchKind.MATCH, row, 1.0)
+                score = similarity(fp.labels, frozenset(json.loads(row["labels_json"])))
+                if score > best_score:
+                    best, best_score = row, score
 
-        if best is None or best_score < DRIFT_THRESHOLD:
-            return MatchResult(MatchKind.UNKNOWN, score=best_score)
-        kind = MatchKind.MATCH if best_score >= MATCH_THRESHOLD else MatchKind.DRIFT
-        return self._result(kind, best, best_score)
+            if best is None or best_score < DRIFT_THRESHOLD:
+                return MatchResult(MatchKind.UNKNOWN, score=best_score)
+            kind = MatchKind.MATCH if best_score >= MATCH_THRESHOLD else MatchKind.DRIFT
+            return self._result(kind, best, best_score)
 
     @staticmethod
     def _result(kind, row, score) -> MatchResult:

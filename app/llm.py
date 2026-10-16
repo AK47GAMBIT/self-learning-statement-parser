@@ -38,14 +38,21 @@ class LLMClient(Protocol):
 class GeminiClient:
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None,
                  retries: int = 4, backoff: float = 2.0):
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        # Support either a single explicit key, a comma-separated list in GEMINI_API_KEYS, or GEMINI_API_KEY
+        if api_key:
+            self.keys = [api_key]
+        else:
+            keys_env = os.environ.get("GEMINI_API_KEYS") or os.environ.get("GEMINI_API_KEY", "")
+            self.keys = [k.strip() for k in keys_env.split(",") if k.strip()]
+        
         self.model = model or os.environ.get("LLM_MODEL") or DEFAULT_MODEL
         self.retries = retries
         self.backoff = backoff
+        self.key_index = 0
         self._client = None
 
     def _get_client(self):
-        if not self.api_key:
+        if not self.keys:
             raise LLMNotConfiguredError(
                 "GEMINI_API_KEY is not set. Add it to .env to learn new formats.")
         if self._client is None:
@@ -55,11 +62,22 @@ class GeminiClient:
                 raise LLMNotConfiguredError(
                     "The google-genai package is not installed "
                     "(pip install -r requirements.txt)") from e
-            self._client = genai.Client(api_key=self.api_key)
+            current_key = self.keys[self.key_index]
+            self._client = genai.Client(api_key=current_key)
         return self._client
 
+    def _rotate_key(self):
+        """Rotates to the next available API key if multiple are configured."""
+        if len(self.keys) <= 1:
+            return False
+        self.key_index = (self.key_index + 1) % len(self.keys)
+        self._client = None  # Force client re-creation with the new key
+        print(f"🔄 Quota exhausted on current key. Rotating to backup API key index {self.key_index}...")
+        return True
+
+    complete_doc = None
+
     def complete(self, system: str, prompt: str) -> str:
-        client = self._get_client()
         from google.genai import types
 
         config = types.GenerateContentConfig(
@@ -67,21 +85,33 @@ class GeminiClient:
             temperature=0,
             response_mime_type="application/json",
         )
-        for attempt in range(self.retries + 1):
+        
+        max_attempts = max(self.retries + 1, len(self.keys))
+        for attempt in range(max_attempts):
             try:
+                client = self._get_client()
                 response = client.models.generate_content(
                     model=self.model, contents=prompt, config=config)
             except Exception as e:  # SDK and network errors have no common base class
                 code = getattr(e, "code", None)
+                err_str = str(e)
+                is_quota_error = code == 429 or "RESOURCE_EXHAUSTED" in err_str or "429" in err_str
+
+                # If we hit quota/rate limits and have more keys, rotate immediately
+                if is_quota_error and self._rotate_key():
+                    continue
+
                 retryable = code is None or code in RETRYABLE_CODES
-                if not retryable or attempt == self.retries:
+                if not retryable or attempt == max_attempts - 1:
                     raise LLMCallError(
                         f"Gemini call failed ({code or type(e).__name__}): "
                         f"{str(e)[:300]}") from e
                 time.sleep(self.backoff * (2 ** attempt))
                 continue
+
             text = getattr(response, "text", None)
             if not text:
                 raise LLMCallError("Gemini returned an empty reply (possibly blocked)")
             return text
-        raise LLMCallError("unreachable")  # loop always returns or raises
+        raise LLMCallError("unreachable")
+    

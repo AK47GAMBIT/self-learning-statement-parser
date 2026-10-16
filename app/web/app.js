@@ -9,7 +9,12 @@ const STATUS_LABEL = {
   parsed_ok: "OK", needs_review: "Needs review", failed: "Failed",
   learning_failed: "Learning failed", password_required: "Password needed",
 };
+const RETRYABLE = new Set(["password_required", "failed", "learning_failed"]);
 const state = { tab: "documents", filter: "attention", q: "", page: 0, selected: null, showNoPdf: false };
+const bench = {
+  demo: false, busy: "", message: "", messageIsError: false, password: "", days: "2",
+  uploads: [], mail: null, scenarios: [], scenarioResults: {},
+};
 let token = sessionStorage.getItem("review_token") || "";
 let renderSeq = 0;          // lets a slow, outdated response be ignored
 
@@ -45,6 +50,8 @@ function fmt(value, minDecimals = 2) {
 }
 const txt = (v) => (v === null || v === undefined || v === "") ? "–" : String(v);
 const trunc = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+const fileSize = (n) => (n < 1024 ? n + " B" : n < 1048576 ? Math.round(n / 1024) + " KB"
+  : Math.round(n / 104857.6) / 10 + " MB");
 
 // ------------------------------------------------------------------ access token
 function showLogin(message) {
@@ -56,8 +63,8 @@ function showLogin(message) {
 
 async function api(path, options) {
   const opts = options || {};
-  const headers = { "X-Review-Token": token };
-  if (opts.body) headers["Content-Type"] = "application/json";
+  const headers = Object.assign({ "X-Review-Token": token }, opts.headers || {});
+  if (opts.body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
   const response = await fetch(path, { method: opts.method || "GET", headers, body: opts.body });
   if (response.status === 401) {
     showLogin(token ? "That token was not accepted." : "");
@@ -79,6 +86,10 @@ function badge(status) {
   const known = status in STATUS_LABEL;
   return el("span", { class: "badge " + (known ? status : "unknown") },
     known ? STATUS_LABEL[status] : status);
+}
+
+function chip(text, kind) {
+  return el("span", { class: "chip " + (kind || "skip") }, text);
 }
 
 function reviewPill(review) {
@@ -112,6 +123,16 @@ function go(tab, filter) {
   if (filter) state.filter = filter;
   state.page = 0;
   state.selected = null;
+  render();
+}
+
+function openDoc(id) {
+  state.tab = "documents";
+  state.filter = "all";
+  state.q = "";
+  $("search").value = "";
+  state.page = 0;
+  state.selected = id;
   render();
 }
 
@@ -187,6 +208,35 @@ function reviewBlock(d, resolved) {
     history.length ? el("ul", { class: "issues sub" }, history) : null);
 }
 
+function retryBlock(d) {
+  if (!RETRYABLE.has(d.status)) return null;
+  const pw = el("input", { type: "password", autocomplete: "off",
+                           placeholder: "Password, if the PDF is locked (not stored)" });
+  const message = el("p", { class: "error" });
+  const run = async () => {
+    message.textContent = "Working… (a new layout can take up to a minute)";
+    try {
+      const r = await api("/api/documents/" + d.id + "/retry",
+        { method: "POST", body: JSON.stringify({ password: pw.value }) });
+      if (r.status === d.status) {
+        message.textContent = "Still " + (STATUS_LABEL[r.status] || r.status).toLowerCase() +
+          (r.error ? ": " + trunc(r.error, 200) : ".");
+      } else {
+        await render();
+      }
+    } catch (e) {
+      message.textContent = e instanceof AuthError ? "" : e.message;
+    }
+  };
+  return el("div", { class: "review" },
+    el("h3", {}, "Try again"),
+    el("p", { class: "hint" }, "Runs the pipeline again on the saved file. Use it after adding a password " +
+      "or when the LLM was unavailable."),
+    pw,
+    el("div", { class: "row" }, el("button", { class: "primary", onclick: run }, "Retry processing")),
+    message);
+}
+
 async function docDetail(id) {
   const d = await api("/api/documents/" + id);
   const resolved = !!d.review && (d.review.decision === "approved" || d.review.decision === "rejected");
@@ -207,6 +257,7 @@ async function docDetail(id) {
       ["Updated", d.updated_at],
     ]),
     d.error ? el("p", { class: "error" }, d.error) : null,
+    retryBlock(d),
     reviewBlock(d, resolved),
   ];
   if (d.issues.length) {
@@ -241,6 +292,251 @@ async function docDetail(id) {
     }
   }
   return el("div", { class: "panel" }, parts);
+}
+
+// ------------------------------------------------------------------ workbench
+function btn(label, onclick, cls) {
+  return el("button", { class: cls || null, disabled: bench.busy ? "" : null, onclick }, label);
+}
+
+function resultLine(r, showName) {
+  return el("div", { class: "result" },
+    el("div", { class: "row" },
+      showName ? el("strong", {}, r.filename) : null,
+      badge(r.status),
+      r.duplicate ? chip("duplicate") : null,
+      chip("LLM " + (r.used_llm ? "yes" : "no"), r.used_llm ? "info" : "ok"),
+      r.format_name ? chip(r.format_name + (r.match_kind ? " · " + r.match_kind : "")) : null,
+      r.closing_value ? chip("closing " + (r.currency || "") + " " + fmt(r.closing_value)) : null,
+      r.document_id ? el("button", { class: "ghost", onclick: () => openDoc(r.document_id) }, "Open") : null),
+    r.error ? el("div", { class: "error sub" }, trunc(r.error, 220)) : null,
+    (r.errors || []).map((e) => el("div", { class: "sev-error sub" }, e.code + ": " + trunc(e.message, 160))));
+}
+
+async function runBusy(label, fn) {
+  if (bench.busy) return;
+  bench.busy = label;
+  bench.message = "";
+  bench.messageIsError = false;
+  renderBench();
+  try {
+    await fn();
+  } catch (e) {
+    if (!(e instanceof AuthError)) { bench.message = e.message; bench.messageIsError = true; }
+  } finally {
+    bench.busy = "";
+    renderBench();
+    try { await renderCards(); } catch (e) { /* cards refresh on the next poll */ }
+  }
+}
+
+async function processFiles(files) {
+  const list = Array.from(files);
+  if (!list.length) return;
+  await runBusy("Processing…", async () => {
+    for (const file of list) {
+      const row = { name: file.name, size: file.size, state: "working" };
+      bench.uploads.unshift(row);
+      renderBench();
+      if (!file.name.toLowerCase().endsWith(".pdf")) {
+        row.state = "error";
+        row.error = "Only PDF files are accepted.";
+        continue;
+      }
+      try {
+        row.result = await api("/api/process", {
+          method: "POST", body: file,
+          headers: { "Content-Type": "application/pdf",
+                     "X-Filename": encodeURIComponent(file.name),
+                     "X-Pdf-Password": encodeURIComponent(bench.password) },
+        });
+        row.state = "done";
+      } catch (e) {
+        if (e instanceof AuthError) throw e;
+        row.state = "error";
+        row.error = e.message;
+      }
+      renderBench();
+    }
+  });
+}
+
+function uploadCard() {
+  const input = el("input", { type: "file", accept: ".pdf,application/pdf", multiple: "",
+                              class: "hidden-input" });
+  input.addEventListener("change", () => processFiles(input.files));
+  const pw = el("input", { type: "password", autocomplete: "off",
+                           placeholder: "Password, if the PDF is locked (used once, never stored)" });
+  pw.value = bench.password;
+  pw.addEventListener("input", () => { bench.password = pw.value; });
+  const zone = el("div", {
+    class: "dropzone" + (bench.busy ? " disabled" : ""),
+    onclick: () => { if (!bench.busy) input.click(); },
+    ondragover: (e) => { e.preventDefault(); zone.classList.add("over"); },
+    ondragleave: () => zone.classList.remove("over"),
+    ondrop: (e) => {
+      e.preventDefault();
+      zone.classList.remove("over");
+      if (!bench.busy) processFiles(e.dataTransfer.files);
+    },
+  }, "Drop PDF statements here, or click to choose files", input);
+  const rows = bench.uploads.map((u) => el("div", { class: "upload-row" },
+    el("div", { class: "row" }, el("strong", {}, u.name), el("span", { class: "sub" }, fileSize(u.size)),
+      u.state === "working" ? el("span", { class: "spinner" }) : null),
+    u.state === "error" ? el("div", { class: "error" }, u.error) : null,
+    u.result ? resultLine(u.result, false) : null));
+  return el("div", { class: "panel" },
+    el("h2", {}, "Process a statement"),
+    el("p", { class: "hint" }, "Known layouts are parsed with no LLM call. A new layout is learned once " +
+      "(this can take up to a minute)."),
+    pw, zone, rows);
+}
+
+async function fetchMail(dry) {
+  await runBusy(dry ? "Checking the mailbox…" : "Fetching and processing mail…", async () => {
+    const summary = await api("/api/email/fetch", { method: "POST",
+      body: JSON.stringify({ days: parseInt(bench.days, 10), dry_run: dry }) });
+    bench.mail = { title: dry ? "Mailbox: dry run (nothing saved or processed)" : "Mailbox result", summary };
+  });
+}
+
+function mailCard() {
+  const days = el("select", {}, ["1", "2", "7", "30"].map((d) =>
+    el("option", { value: d }, "last " + d + (d === "1" ? " day" : " days"))));
+  days.value = bench.days;
+  days.addEventListener("change", () => { bench.days = days.value; });
+  return el("div", { class: "panel" },
+    el("h2", {}, "Mailbox"),
+    el("p", { class: "hint" }, "Reads your configured Gmail inbox (read-only), scores each PDF attachment " +
+      "and processes the statements."),
+    el("div", { class: "row" }, days, btn("Check (dry run)", () => fetchMail(true)),
+      btn("Fetch & process", () => fetchMail(false), "primary")));
+}
+
+function mailResult(m) {
+  const s = m.summary;
+  const rows = s.attachments.map((a) => ({ cells: [
+    a.filename, trunc(a.subject || "", 40),
+    el("span", { class: "badge " + (a.accepted ? "parsed_ok" : "unknown") }, a.accepted ? "accepted" : "skipped"),
+    String(a.score),
+    a.status
+      ? el("div", {}, badge(a.status), " LLM " + (a.used_llm ? "yes" : "no") + (a.duplicate ? " · duplicate" : ""))
+      : el("div", { class: "sub" }, trunc((a.reasons || []).join("; "), 100)),
+  ] }));
+  return el("div", { class: "panel" },
+    el("h3", {}, m.title),
+    el("p", {}, s.new_emails + " new email(s) · " + s.already_known + " already known · processed " +
+      s.processed + ", skipped " + s.skipped + ", no PDF " + s.no_pdf),
+    s.attachments.length
+      ? table(["File", "Subject", "Decision", "Score", "Outcome / reasons"], rows, [3])
+      : el("p", { class: "hint" }, "No PDF attachments found."),
+    (s.errors || []).map((e) => el("div", { class: "error sub" }, e)));
+}
+
+// ---- demo simulator
+async function execScenario(key) {
+  bench.scenarioResults[key] = { working: true };
+  renderBench();
+  try {
+    bench.scenarioResults[key] = await api("/api/demo/scenarios/" + key + "/run", { method: "POST" });
+  } catch (e) {
+    if (e instanceof AuthError) throw e;
+    bench.scenarioResults[key] = { error: e.message };
+  }
+  renderBench();
+}
+
+const runScenario = (key) => runBusy("Running step…", () => execScenario(key));
+const runAll = () => runBusy("Running all steps…", async () => {
+  for (const sc of bench.scenarios) await execScenario(sc.key);
+});
+
+const prepareDemo = () => runBusy("Generating demo files…", async () => {
+  const r = await api("/api/demo/prepare", { method: "POST" });
+  bench.message = "Demo files are ready in " + r.dir + " (" + r.files + " PDFs).";
+});
+
+const deliverInbox = (which) => runBusy("Delivering mail…", async () => {
+  const summary = await api("/api/demo/inbox/" + which, { method: "POST" });
+  bench.mail = { title: "Simulated inbox: " + which + " mail", summary };
+});
+
+const sendTest = (may) => runBusy("Sending to your Gmail…", async () => {
+  const r = await api("/api/demo/send-test-email", { method: "POST", body: JSON.stringify({ may }) });
+  bench.message = "Sent " + r.sent + " email(s) to your Gmail. Delivery can take a few seconds; " +
+    "then press 'Fetch & process'.";
+});
+
+async function resetDemo() {
+  if (!window.confirm("Delete every document, email, review and learned format from this database?")) return;
+  await runBusy("Resetting…", async () => {
+    await api("/api/demo/reset", { method: "POST", body: JSON.stringify({ confirm: "RESET" }) });
+    bench.uploads = [];
+    bench.scenarioResults = {};
+    bench.mail = null;
+    state.selected = null;
+    bench.message = "Demo data cleared. The database is empty again.";
+  });
+}
+
+function stepCard(sc, i) {
+  const res = bench.scenarioResults[sc.key];
+  let outcome = null;
+  if (res && res.working) {
+    outcome = el("div", { class: "hint" }, el("span", { class: "spinner" }), " running…");
+  } else if (res && res.error) {
+    outcome = el("div", { class: "error" }, res.error);
+  } else if (res) {
+    outcome = el("div", {},
+      el("div", { class: "verdict " + (res.ok ? "ok" : "bad") },
+        (res.ok ? "✓ as expected" : "✗ not as expected") + (res.note ? " — " + res.note : "")),
+      res.results.map((r) => resultLine(r, true)));
+  }
+  return el("div", { class: "step" },
+    el("div", { class: "step-no" }, String(i + 1)),
+    el("div", {},
+      el("div", { class: "drawer-head" }, el("strong", {}, sc.title),
+        btn("Run", () => runScenario(sc.key))),
+      el("p", { class: "say" }, sc.say),
+      el("p", { class: "sub" }, "Expected: " + sc.expect + " · " + sc.files.join(", ")),
+      outcome));
+}
+
+function demoCard() {
+  return el("div", { class: "panel" },
+    el("div", { class: "drawer-head" },
+      el("div", {}, el("h2", {}, "Demo simulator"),
+        el("p", { class: "hint" }, "Scripted steps on synthetic statements. Use Run all as a self-test " +
+          "before recording. Every step should show a green tick.")),
+      el("div", { class: "row" }, btn("Prepare demo files", prepareDemo),
+        btn("Run all steps", runAll, "primary"), btn("Reset demo data", resetDemo, "danger"))),
+    el("div", { class: "steps" }, bench.scenarios.map(stepCard)),
+    el("h3", {}, "Inbox simulator"),
+    el("p", { class: "hint" }, "Delivers realistic emails to an in-memory inbox, with no Gmail needed: " +
+      "a statement email with two PDFs (one locked), a newsletter with a decoy PDF, and a plain email."),
+    el("div", { class: "row" }, btn("Deliver April mail", () => deliverInbox("april")),
+      btn("Deliver May mail", () => deliverInbox("may"))),
+    el("p", { class: "hint" }, "Or send the same test emails to your real Gmail, then fetch them above."),
+    el("div", { class: "row" }, btn("Send April mail to my Gmail", () => sendTest(false)),
+      btn("Send May mail to my Gmail", () => sendTest(true))));
+}
+
+function renderBench() {
+  if (state.tab !== "workbench") return;
+  const sections = [];
+  if (bench.message) {
+    sections.push(el("div", { class: "banner" + (bench.messageIsError ? " bad" : "") }, bench.message));
+  }
+  if (bench.busy) {
+    sections.push(el("div", { class: "banner working" }, el("span", { class: "spinner" }),
+      " " + bench.busy + " A new layout can take up to a minute."));
+  }
+  sections.push(uploadCard(), mailCard());
+  if (bench.demo) sections.push(demoCard());
+  if (bench.mail) sections.push(mailResult(bench.mail));
+  $("list").replaceChildren(...sections);
+  $("detail").replaceChildren();
+  $("layout").classList.remove("has-detail");
 }
 
 // ------------------------------------------------------------------ tabs
@@ -339,9 +635,17 @@ async function render(opts) {
   };
   try {
     await renderCards();
-    if (state.tab === "documents") await renderDocuments(p);
-    else if (state.tab === "emails") await renderEmails(p);
-    else await renderFormats(p);
+    if (state.tab === "workbench") {
+      p.filters.replaceChildren();
+      p.pager.replaceChildren();
+      if (!p.poll) renderBench();      // never rebuild under someone typing a password
+    } else if (state.tab === "documents") {
+      await renderDocuments(p);
+    } else if (state.tab === "emails") {
+      await renderEmails(p);
+    } else {
+      await renderFormats(p);
+    }
     $("layout").classList.toggle("has-detail", p.detail.childElementCount > 0);
     $("updated").textContent = "Updated " + new Date().toLocaleTimeString();
   } catch (e) {
@@ -350,7 +654,19 @@ async function render(opts) {
   }
 }
 
-// ------------------------------------------------------------------ wiring
+// ------------------------------------------------------------------ start-up
+async function start() {
+  try {
+    const cfg = await api("/api/config");
+    bench.demo = !!cfg.demo;
+    if (bench.demo) bench.scenarios = await api("/api/demo/scenarios");
+    state.tab = "workbench";
+  } catch (e) {
+    if (e instanceof AuthError) return;
+  }
+  render();
+}
+
 document.querySelectorAll("#tabs button").forEach((b) =>
   b.addEventListener("click", () => go(b.dataset.tab)));
 $("refresh").addEventListener("click", () => render());
@@ -364,7 +680,7 @@ $("login-form").addEventListener("submit", (e) => {
   token = $("token").value.trim();
   sessionStorage.setItem("review_token", token);
   $("login").hidden = true;
-  render();
+  start();
 });
 let searchTimer = null;
 $("search").addEventListener("input", (e) => {
@@ -376,8 +692,11 @@ $("search").addEventListener("input", (e) => {
     render();
   }, 300);
 });
+// A file dropped outside the drop zone would make the browser navigate away to the PDF.
+window.addEventListener("dragover", (e) => e.preventDefault());
+window.addEventListener("drop", (e) => e.preventDefault());
 setInterval(() => {
   if (token && !document.hidden && $("login").hidden) render({ poll: true });
 }, POLL_MS);
 
-if (token) render(); else showLogin("");
+if (token) start(); else showLogin("");
