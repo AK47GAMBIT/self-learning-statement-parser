@@ -76,6 +76,7 @@ python -m app.preflight            # checks the setup (add --llm --mail for live
 | Variable | Needed for | Notes |
 |---|---|---|
 | `GEMINI_API_KEY` | learning new formats | Free key from Google AI Studio |
+| `GEMINI_API_KEYS` | automatic key rotation | Comma-separated list of backup keys; automatically rotates on quota exhaustion (429) |
 | `LLM_MODEL` | learning | Default `gemini-3.8-flash`. Models get retired, so this is configurable |
 | `PDF_PASSWORDS` | locked PDFs | Comma-separated, tried in order (e.g. PAN, date of birth) |
 | `REVIEW_TOKEN` | review page | 16+ characters. If unset, a random token is printed at start |
@@ -102,6 +103,8 @@ python -m samples.send_test_email [--may]          # put test emails in your tes
 python -m app.api --db statements.db               # review page, http://127.0.0.1:8000
 python -m app.learner samples/pdfs/abc_pms.pdf     # learn one format and print the report
 python -m samples.export_outputs --db statements.db   # write per-document JSON outputs
+python -m app.api --db statements.db               # review page, http://127.0.0.1:8000
+python -m app.api --db demo.db --demo    # review page + Workbench (upload, mailbox, demo simulator)
 ```
 
 Failed documents (`password_required`, `failed`, `learning_failed`) are retried by running
